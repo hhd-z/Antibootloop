@@ -1,1 +1,22 @@
+#!/system/bin/sh
+# CGI cho WebUI (busybox httpd). Chỉ cho phép gọi api.sh, có xác thực token.
+MODDIR="/data/adb/modules/anti_bootloop"
 
+echo "Content-Type: text/plain; charset=utf-8"
+echo "Cache-Control: no-store"
+echo ""
+
+REAL=$(cat "$MODDIR/webui/token" 2>/dev/null | tr -d '[:space:]')
+GOT=$(printf '%s' "$HTTP_X_TOKEN" | tr -d '[:space:]')
+if [ -z "$REAL" ] || [ "$GOT" != "$REAL" ]; then
+    echo "ERR: auth"
+    exit 0
+fi
+
+BODY=$(cat)
+case "$BODY" in
+    *[!A-Za-z0-9_.,\ =:-]*) echo "ERR: invalid characters"; exit 0 ;;
+esac
+
+# shellcheck disable=SC2086
+sh "$MODDIR/api.sh" $BODY 2>&1
