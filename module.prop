@@ -1,0 +1,6 @@
+id=anti_bootloop
+name=Anti Bootloop
+version=v1.0
+versionCode=8
+author=Kriz Neo
+description=🛡️ Anti Bootloop | Ngưỡng: 2 lần | Reboot recovery: Tắt | Tự tắt module khi bootloop.
