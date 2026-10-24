@@ -1,8 +1,8 @@
 <div align="center">
 
-<!-- Animated Header / Typing SVG -->
+<!-- Animated Header / Typing SVG (Tối ưu kích thước cho cả Mobile & PC) -->
 <a href="https://git.io/typing-svg">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&duration=3000&pause=1000&color=FF6B00&center=true&vCenter=true&width=600&lines=%F0%9F%9B%A1%EF%B8%8F+Anti+Bootloop;Auto-Rescue+Rooted+Android;Magisk+%7C+KernelSU+%7C+APatch" alt="Typing SVG" />
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=26&duration=3000&pause=1000&color=FF6B00&center=true&vCenter=true&width=420&lines=%F0%9F%9B%A1%EF%B8%8F+Anti+Bootloop;Auto-Rescue+Rooted+Android;Magisk+%7C+KernelSU+%7C+APatch" alt="Typing SVG" width="100%" />
 </a>
 
 <p align="center">
@@ -23,17 +23,15 @@
 <!-- Language Switcher Buttons -->
 <p align="center">
   <a href="#-tiếng-việt">
-    <img src="https://img.shields.io/badge/🇻🇳_Đọc_Bản_Tiếng_Việt-DA251D?style=for-the-badge" alt="Tiếng Việt" />
+    <img src="https://img.shields.io/badge/🇻🇳_Tiếng_Việt-DA251D?style=for-the-badge" alt="Tiếng Việt" />
   </a>
-  &nbsp;&nbsp;
+  &nbsp;
   <a href="#-english">
-    <img src="https://img.shields.io/badge/🇬🇧_Read_in_English-012169?style=for-the-badge" alt="English" />
+    <img src="https://img.shields.io/badge/🇬🇧_English-012169?style=for-the-badge" alt="English" />
   </a>
 </p>
 
 </div>
-
-<br>
 
 ---
 
@@ -50,7 +48,7 @@
 - [🖥️ Giao diện WebUI](#️-giao-diện-webui)
 - [⚙️ Cấu hình nâng cao](#️-cấu-hình-nâng-cao)
 - [🧪 Thử nghiệm Bootloop](#-thử-nghiệm-bootloop)
-- [🆘 Khắc phục sự cố](#-khắc-phục-sự-cố)
+- [🆘 Khắc phục sự cố](#-khắc-phục-sự-cố-faq)
 - [📁 Cấu trúc thư mục](#-cấu-trúc-thư-mục)
 - [🔒 Bảo mật & Giấy phép](#-bảo-mật--giấy-phép)
 
@@ -66,43 +64,21 @@
 
 ## ✨ Tính năng nổi bật
 
-<table>
-  <tr>
-    <td width="50%">
-      <h3>🛡️ Bảo vệ Đa tầng</h3>
-      <ul>
-        <li><b>Đếm lỗi thông minh:</b> Tuỳ chỉnh ngưỡng kích hoạt từ <code>1</code> đến <code>5</code> lần boot lỗi liên tiếp.</li>
-        <li><b>Nhận diện sâu:</b> Phát hiện cả lỗi treo logo quá lâu (<code>>180s</code>) hoặc vào được màn hình khoá nhưng <b>SystemUI bị crash</b>.</li>
-        <li><b>Vào thẳng Recovery:</b> Tùy chọn tự động reboot vào TWRP/OrangeFox sau khi vô hiệu hoá các module gây hại.</li>
-      </ul>
-    </td>
-    <td width="50%">
-      <h3>🎛️ Quản lý Tiện lợi</h3>
-      <ul>
-        <li><b>Danh sách trắng (Whitelist):</b> Giữ cho các module thiết yếu không bao giờ bị tắt nhầm.</li>
-        <li><b>Khôi phục 1-Chạm:</b> Bật lại toàn bộ module vừa bị tắt chỉ bằng một nút bấm trên WebUI.</li>
-        <li><b>Cài đặt bằng phím cứng:</b> Chọn cấu hình ngay lúc flash bằng phím Âm lượng (Volume Keys).</li>
-      </ul>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <h3>🖥️ WebUI Hiện đại</h3>
-      <ul>
-        <li><b>Giao diện 3 Tab:</b> Nhật ký · Module · Cài đặt.</li>
-        <li><b>Đa ngôn ngữ & Giao diện:</b> Hỗ trợ Tiếng Việt / Tiếng Anh cùng chế độ Sáng / Tối (Light/Dark mode).</li>
-        <li><b>Hỗ trợ nút Action:</b> Tự mở trình duyệt với token bảo mật cho người dùng Magisk.</li>
-      </ul>
-    </td>
-    <td width="50%">
-      <h3>📜 Nhật ký Chi tiết</h3>
-      <ul>
-        <li><b>Lịch sử Timeline:</b> Ghi nhận thời점 xảy ra bootloop theo đúng múi giờ của điện thoại.</li>
-        <li><b>Lưu trữ xoay vòng:</b> Giữ lại 10 file log của 10 lần khởi động gần nhất để dễ dàng bắt bệnh.</li>
-      </ul>
-    </td>
-  </tr>
-</table>
+> ### 🛡️ Bảo vệ Đa tầng
+> - **Đếm lỗi thông minh:** Tuỳ chỉnh ngưỡng kích hoạt từ `1` đến `5` lần boot lỗi liên tiếp.
+> - **Nhận diện sâu:** Phát hiện cả lỗi treo logo quá lâu (`>180s`) hoặc vào được màn hình khoá nhưng **SystemUI bị crash**.
+> - **Vào thẳng Recovery:** Tùy chọn tự động reboot vào TWRP / OrangeFox sau khi vô hiệu hoá các module gây hại.
+
+> ### 🎛️ Quản lý Tiện lợi
+> - **Danh sách trắng (Whitelist):** Giữ cho các module thiết yếu không bao giờ bị tắt nhầm.
+> - **Khôi phục 1-Chạm:** Bật lại toàn bộ module vừa bị tắt chỉ bằng một nút bấm trên WebUI.
+> - **Cài đặt bằng phím cứng:** Chọn cấu hình ngay lúc flash bằng phím Âm lượng (Volume Keys).
+
+> ### 🖥️ WebUI Hiện đại & Nhật ký Chi tiết
+> - **Giao diện 3 Tab:** *Nhật ký · Module · Cài đặt* trực quan, dễ thao tác trên điện thoại.
+> - **Đa ngôn ngữ & Giao diện:** Hỗ trợ *Tiếng Việt / Tiếng Anh* cùng chế độ *Sáng / Tối* (Light/Dark mode).
+> - **Hỗ trợ nút Action:** Tự mở trình duyệt với token bảo mật cục bộ cho người dùng Magisk.
+> - **Lịch sử & Log xoay vòng:** Ghi nhận thời điểm xảy ra bootloop theo giờ điện thoại và lưu lại 10 file log gần nhất.
 
 ---
 
@@ -123,10 +99,12 @@
 2. Mở **Magisk / KernelSU / APatch** ➔ **Modules** ➔ **Install from storage** ➔ chọn file zip.
 3. Sử dụng **phím Âm lượng** theo hướng dẫn trên màn hình:
 
-| Bước cài đặt | Thao tác phím cứng | Mặc định (sau 30s) |
+| Bước | Hành động với phím cứng | Mặc định |
 | :--- | :--- | :---: |
-| **1. Chọn số lần boot lỗi (1–5)** | 🔉 **Vol-** : Chuyển số tiếp theo (1 ➔ 5)<br>🔊 **Vol+** : Xác nhận chọn số đang hiện | `3 lần` |
-| **2. Reboot vào Recovery khi lỗi?** | 🔊 **Vol+** : Có (Yes)<br>🔉 **Vol-** : Không (No) | `Có (Yes)` |
+| **1. Ngưỡng lỗi (1–5)** | 🔉 **Vol-** : Đổi số (1➔5)<br>🔊 **Vol+** : Chọn số | `3 lần` |
+| **2. Vào Recovery?** | 🔊 **Vol+** : Có<br>🔉 **Vol-** : Không | `Có` |
+
+*(Nếu không bấm phím trong 30 giây, module sẽ tự áp dụng cấu hình mặc định).*
 
 4. Nhấn **Reboot** để kích hoạt hệ thống bảo vệ.
 
@@ -141,16 +119,16 @@ flowchart TD
     A([⚡ Bắt đầu Boot]) --> B[Chạy post-fs-data.sh]
     B --> C{Số lần lỗi ≥ Ngưỡng?}
     
-    C -- CÓ (Bootloop!) --> D[🛡️ Tắt toàn bộ Module<br/><i>Trừ Whitelist & chính nó</i>]
+    C -- CÓ (Bootloop!) --> D[🛡️ Tắt toàn bộ Module<br/>Trừ Whitelist & chính nó]
     D --> E{Bật chế độ Recovery?}
     E -- Có --> F([🔄 Reboot vào Recovery])
     E -- Không --> G([🔄 Reboot bình thường])
     
     C -- KHÔNG --> H[➕ Tăng bộ đếm: count + 1]
     H --> I[Chạy service.sh]
-    I --> J{Hệ thống boot xong?<br/><i>sys.boot_completed</i>}
+    I --> J{Hệ thống boot xong?<br/>sys.boot_completed}
     
-    J -- Treo > 180s --> K([💥 Ép Reboot - Tính 1 lần lỗi])
+    J -- Treo > 180s --> K([💥 Ép Reboot - Tính 1 lỗi])
     J -- Thành công --> L{Theo dõi 30s đầu:<br/>SystemUI ổn định?}
     L -- Crash liên tục --> K
     L -- Ổn định --> M([✅ Reset count = 0<br/>Hoàn tất khởi động])
@@ -171,11 +149,9 @@ flowchart TD
 
 ## 🖥️ Giao diện WebUI
 
-| Tab chức năng | Chi tiết tính năng |
-| :---: | :--- |
-| 📜 **Nhật ký** | Xem trạng thái bảo vệ hiện tại, lịch sử các lần cứu máy (dạng timeline), đọc log chi tiết của từng lần boot (hỗ trợ lọc file, tô màu cú pháp, sao chép nhanh). |
-| 🧩 **Module** | Danh sách toàn bộ module trong máy, thanh tìm kiếm/lọc, công tắc **"Không bị tắt"** (thêm vào Whitelist), nút khôi phục nhanh các module vừa bị vô hiệu hoá. |
-| ⚙️ **Cài đặt** | Tuỳ chỉnh ngưỡng lỗi (`1–5`), bật/tắt tự vào Recovery, chuyển đổi ngôn ngữ (`VI/EN`), nút reset bộ đếm thủ công và hướng dẫn tóm tắt. |
+- 📜 **Tab Nhật ký:** Xem trạng thái bảo vệ hiện tại, lịch sử các lần cứu máy (dạng timeline), đọc log chi tiết của từng lần boot (hỗ trợ lọc file, tô màu cú pháp, sao chép nhanh).
+- 🧩 **Tab Module:** Danh sách toàn bộ module trong máy, thanh tìm kiếm/lọc, công tắc **"Không bị tắt"** (thêm vào Whitelist), nút khôi phục nhanh các module vừa bị vô hiệu hoá.
+- ⚙️ **Tab Cài đặt:** Tuỳ chỉnh ngưỡng lỗi (`1–5`), bật/tắt tự vào Recovery, chuyển đổi ngôn ngữ (`VI/EN`), nút reset bộ đếm thủ công và hướng dẫn tóm tắt.
 
 ### 🚀 Cách mở WebUI:
 - **Trên KernelSU / APatch:** Nhấn trực tiếp vào thẻ module trong danh sách.
@@ -187,28 +163,24 @@ flowchart TD
 
 Toàn bộ dữ liệu cấu hình và nhật ký được lưu tại `/data/adb/anti_bootloop/` *(sẽ tự động xoá sạch khi bạn gỡ cài đặt module)*.
 
-| Tên File / Thư mục | Mô tả chi tiết |
-| :--- | :--- |
-| `config.prop` | Lưu cấu hình: `threshold` (1–5), `recovery` (0/1), `lang` (`vi`/`en`), `whitelist` (ID cách nhau bởi dấu phẩy), `boot_timeout` (mặc định `180` giây), `stable_time` (mặc định `30` giây). |
-| `state.prop` | Lưu trạng thái: `count` (số lần lỗi hiện tại), `last_trigger` (giờ UTC), `log_idx`. |
-| `events.log` | Lịch sử các sự kiện kích hoạt cứu máy (lưu theo chuẩn UTC). |
-| `logs/boot-N.log` | Nhật ký chi tiết của từng lần khởi động, tự động ghi đè xoay vòng tối đa 10 file. |
-| `disabled.list` | Danh sách ID các module đã bị **Anti Bootloop** can thiệp tắt. |
+- 📄 **`config.prop`** : Lưu cấu hình `threshold` (1–5), `recovery` (0/1), `lang` (`vi`/`en`), `whitelist` (ID cách nhau bởi dấu phẩy), `boot_timeout` (mặc định `180`s), `stable_time` (mặc định `30`s).
+- 📄 **`state.prop`** : Lưu trạng thái `count` (số lần lỗi hiện tại), `last_trigger` (giờ UTC), `log_idx`.
+- 📄 **`events.log`** : Lịch sử các sự kiện kích hoạt cứu máy (lưu theo chuẩn UTC).
+- 📂 **`logs/boot-N.log`** : Nhật ký chi tiết từng lần khởi động, tự động xoay vòng tối đa 10 file.
+- 📄 **`disabled.list`** : Danh sách ID các module đã bị **Anti Bootloop** can thiệp tắt.
 
 > [!TIP]
-> Bạn có thể tinh chỉnh thời gian chờ treo logo (`boot_timeout`) và thời gian kiểm tra SystemUI (`stable_time`) bằng cách sửa trực tiếp trong file `config.prop` bằng trình quản lý file có quyền root.
+> Bạn có thể tinh chỉnh thời gian chờ treo logo (`boot_timeout`) và thời gian kiểm tra SystemUI (`stable_time`) bằng cách sửa trực tiếp trong file `config.prop`.
 
 ---
 
 ## 🧪 Thử nghiệm Bootloop
 
-Bạn muốn kiểm tra xem module có hoạt động tốt trên máy mình không? Hãy thử 1 trong 2 cách dưới đây:
-
 > [!IMPORTANT]
 > Trước khi thử nghiệm, hãy mở WebUI và **đưa các module quan trọng của bạn vào Whitelist**, vì khi kích hoạt, Anti Bootloop sẽ tắt toàn bộ các module còn lại!
 
 <details>
-<summary><b>🟢 Cách 1: Giả lập bộ đếm (An toàn tuyệt đối - Khuyên dùng)</b></summary>
+<summary><b>🟢 Cách 1: Giả lập bộ đếm (An toàn - Khuyên dùng)</b></summary>
 <br>
 
 Mở ứng dụng Terminal (như Termux), cấp quyền root (`su`) và đặt bộ đếm bằng đúng ngưỡng bạn đã cài (ví dụ ngưỡng là `3`), sau đó khởi động lại:
@@ -277,30 +249,30 @@ Từ các phiên bản mới, thời gian được ghi nhận theo chuẩn quố
 
 ```text
 📦 anti_bootloop/
- ┣ 📜 module.prop          # Thông tin định danh module
- ┣ 📜 customize.sh         # Script cài đặt tương tác bằng phím Âm lượng
- ┣ 📜 post-fs-data.sh      # Trái tim của module: Đếm lỗi, phát hiện bootloop & tắt module
- ┣ 📜 service.sh           # Theo dõi quá trình boot, canh treo máy (>180s) & lỗi SystemUI
- ┣ 📜 action.sh            # Xử lý nút Action: Khởi tạo Web Server cục bộ cho Magisk
- ┣ 📜 api.sh               # Backend API xử lý các lệnh từ WebUI
- ┣ 📜 common.sh            # Thư viện các hàm dùng chung
- ┣ 📜 uninstall.sh         # Script dọn dẹp dữ liệu khi gỡ module
- ┗ 📂 webroot/             # Giao diện người dùng
-    ┣ 📜 index.html        # Giao diện WebUI (SPA)
+ ┣ 📜 module.prop      # Thông tin định danh module
+ ┣ 📜 customize.sh     # Cài đặt bằng phím Âm lượng
+ ┣ 📜 post-fs-data.sh  # Đếm lỗi, phát hiện & tắt module
+ ┣ 📜 service.sh       # Canh treo máy (>180s) & SystemUI
+ ┣ 📜 action.sh        # Mở WebUI cho Magisk
+ ┣ 📜 api.sh           # Backend API cho WebUI
+ ┣ 📜 common.sh        # Hàm dùng chung
+ ┣ 📜 uninstall.sh     # Dọn dẹp khi gỡ module
+ ┗ 📂 webroot/         # Giao diện người dùng
+    ┣ 📜 index.html    # Giao diện WebUI
     ┗ 📂 cgi-bin/
-       ┗ 📜 api            # Cổng giao tiếp CGI (có xác thực Token) dành cho Magisk
+       ┗ 📜 api        # CGI xác thực Token (Magisk)
 ```
 
 ---
 
 ## 🔒 Bảo mật & Giấy phép
 
-- **Bảo mật WebUI:** Giao diện web chỉ được phép gọi các hàm cố định đã được định nghĩa sẵn trong `api.sh` (tuyệt đối không cho phép thực thi lệnh shell tuỳ ý từ phía trình duyệt). Ở chế độ Magisk, máy chủ chỉ lắng nghe địa chỉ nội bộ `127.0.0.1` với cổng (port) ngẫu nhiên, bắt buộc xác thực bằng Token ngẫu nhiên cho mỗi phiên và tự huỷ sau 10 phút.
-- **Ghi công (Credits):** Ý tưởng của dự án được truyền cảm hứng từ module **AshReXcue Bootloop Protector** của tác giả **AshBorn (@Ripper_Hybrid)**. Toàn bộ mã nguồn của **Anti Bootloop** được thiết kế và viết mới hoàn toàn độc lập.
-- **Giấy phép (License):** Mã nguồn mở theo giấy phép **GNU General Public License v3.0** — xem chi tiết tại file [`LICENSE`](LICENSE).
+- **Bảo mật WebUI:** Giao diện web chỉ được phép gọi các hàm cố định đã được định nghĩa sẵn trong `api.sh` (không cho phép chạy lệnh shell tuỳ ý). Ở chế độ Magisk, máy chủ chỉ lắng nghe `127.0.0.1` với port ngẫu nhiên, bắt buộc xác thực Token ngẫu nhiên cho mỗi phiên và tự tắt sau 10 phút.
+- **Ghi công (Credits):** Ý tưởng lấy cảm hứng từ **AshReXcue Bootloop Protector** của **AshBorn (@Ripper_Hybrid)**. Mã nguồn của **Anti Bootloop** được viết lại hoàn toàn độc lập.
+- **Giấy phép (License):** Phát hành theo giấy phép **GNU General Public License v3.0** — xem file [`LICENSE`](LICENSE).
 
 > [!CAUTION]
-> **Miễn trừ trách nhiệm:** Module được cung cấp *"nguyên trạng" (as-is)* mà không có bất kỳ sự bảo đảm nào. Việc can thiệp sâu vào hệ thống luôn tiềm ẩn rủi ro — hãy luôn sao lưu dữ liệu quan trọng và tự chịu trách nhiệm với thiết bị của mình.
+> **Miễn trừ trách nhiệm:** Module được cung cấp *"nguyên trạng" (as-is)* mà không có bảo hành. Chỉnh sửa hệ thống luôn tiềm ẩn rủi ro — hãy sao lưu dữ liệu quan trọng và tự chịu trách nhiệm với thiết bị của bạn.
 
 <br>
 
@@ -333,13 +305,16 @@ It comes bundled with a sleek, modern **WebUI** that lets you tweak settings, ma
 
 ## ✨ Key Features
 
-- 🛡️ **Smart Bootloop Detection:** Triggers after `1` to `5` consecutive failed boots (fully configurable).
-- ⏱️ **Hung Boot & SystemUI Guard:** Catches frozen boots (`>180s` timeout) and persistent **SystemUI crashes** within the first `30s` after booting.
-- 🔄 **Recovery Fallback:** Optional automatic reboot directly into Recovery (TWRP/OrangeFox) after disarming modules.
-- ✅ **Module Whitelist:** Protect critical modules from ever being disabled during an emergency.
-- 🎛️ **Volume-Key Installer:** Configure your preferences right during flashing.
-- 🖥️ **Built-in WebUI:** 3 intuitive tabs (*Logs · Modules · Settings*), bilingual (*English / Vietnamese*), adaptive *Light / Dark* theme, and local timezone log conversion.
-- ⚡ **One-Tap Restore:** Re-enable all previously disabled modules with a single tap once you're back in the system.
+> ### 🛡️ Multi-Layer Protection
+> - **Smart Bootloop Detection:** Triggers after `1` to `5` consecutive failed boots (configurable).
+> - **Hung Boot & SystemUI Guard:** Catches frozen boots (`>180s` timeout) and persistent **SystemUI crashes** within the first `30s` after booting.
+> - **Recovery Fallback:** Optional automatic reboot directly into Recovery (TWRP/OrangeFox) after disarming modules.
+
+> ### 🎛️ Effortless Control & WebUI
+> - **Module Whitelist:** Protect critical modules from ever being disabled during an emergency.
+> - **Volume-Key Installer:** Configure your preferences right during flashing.
+> - **Built-in WebUI:** 3 intuitive tabs (*Logs · Modules · Settings*), bilingual (*English / Vietnamese*), adaptive *Light / Dark* theme, and local timezone log conversion.
+> - **One-Tap Restore:** Re-enable all previously disabled modules with a single tap once you're back in the system.
 
 ---
 
@@ -357,21 +332,21 @@ It comes bundled with a sleek, modern **WebUI** that lets you tweak settings, ma
 
 Flash the ZIP archive in your root manager and follow the on-screen **Volume Key** prompts:
 
-| Setup Prompt | Volume Key Action | Default (30s timeout) |
+| Prompt | Volume Keys | Default |
 | :--- | :--- | :---: |
-| **1. Failed boots before action (1–5)** | 🔉 **Vol-** : Next number (wraps 5 ➔ 1)<br>🔊 **Vol+** : Confirm selection | `3 boots` |
-| **2. Reboot to recovery on bootloop?** | 🔊 **Vol+** : Yes<br>🔉 **Vol-** : No | `Yes` |
+| **1. Failed boots (1–5)** | 🔉 **Vol-** : Next (5➔1)<br>🔊 **Vol+** : Select | `3` |
+| **2. Reboot to recovery?** | 🔊 **Vol+** : Yes<br>🔉 **Vol-** : No | `Yes` |
 
-Reboot your device to activate protection.
+*(No input for 30s automatically applies the default settings).* Reboot to activate.
 
 ---
 
 ## 🔍 How It Works
 
 ```mermaid
-flowchart LR
+flowchart TD
     A([⚡ Boot Starts]) --> B{Count ≥ Threshold?}
-    B -- YES --> C[🛡️ Disable Modules<br/><i>Except Whitelist</i>]
+    B -- YES --> C[🛡️ Disable Modules<br/>Except Whitelist]
     C --> D([🔄 Reboot / Recovery])
     B -- NO --> E[➕ Count + 1]
     E --> F{Boot Completed &<br/>SystemUI Stable?}
