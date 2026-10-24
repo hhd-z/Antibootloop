@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Anti Bootloop</title>
+<style>
+/* ========== 1. MIUIX 0.9.4 COLOR TOKENS ========== */
+:root {
+  color-scheme: dark light;
+  --font-sans: system-ui, -apple-system, "MiSans", "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  --spring: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Miuix DarkColors */
+  --bg: #000000;
+  --surface: #1A1A1C;
+  --card: #242427;
+  --card-press: #2E2E32;
+  --item-bg: #303034;
+  --haze: #000000;
+  --text: #F0F0F2;
+  --sub: #8E8E93;
+  --dim: #5C5C62;
+  --divider: rgba(255, 255, 255, 0.07);
+
+  --primary: #277AF7;
+  --primary-fg: #FFFFFF;
+  --primary-soft: rgba(39, 122, 247, 0.16);
+  --sw-off: #404046;
+  --sw-thumb: #FFFFFF;
+
+  --green: #28C840;
+  --green-soft: rgba(40, 200, 64, 0.16);
+  --yellow: #FF9F0A;
+  --yellow-soft: rgba(255, 159, 10, 0.16);
+  --red: #FF453A;
+  --red-soft: rgba(255, 69, 58, 0.16);
+
+  /* Floating Blur Dock Tokens (Dark) */
+  --dock-bg: #202024;
+  --dock-border: rgba(255, 255, 255, 0.10);
+  --dock-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+  --dock-pill: rgba(39, 122, 247, 0.18);
+
+  --r-card: 18px;
+  --r-inner: 13px;
+  --r-btn: 14px;
+  --r-pill: 999px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    /* Miuix LightColors */
+    --bg: #F7F7F7;
+    --surface: #F0F0F2;
+    --card: #FFFFFF;
+    --card-press: #F2F2F5;
+    --item-bg: #F0F0F3;
+    --haze: #F7F7F7;
+    --text: #121214;
+    --sub: #78787E;
+    --dim: #B0B0B8;
+    --divider: rgba(0, 0, 0, 0.06);
+
+    --primary: #3482FF;
+    --primary-fg: #FFFFFF;
+    --primary-soft: rgba(52, 130, 255, 0.12);
+    --sw-off: #E0E0E6;
+    --sw-thumb: #FFFFFF;
+
+    --green: #1FC438;
+    --green-soft: rgba(31, 196, 56, 0.12);
+    --yellow: #F59300;
+    --yellow-soft: rgba(245, 147, 0, 0.12);
+    --red: #F53629;
+    --red-soft: rgba(245, 54, 41, 0.12);
+
+    /* Floating Blur Dock Tokens (Light) */
+    --dock-bg: #FFFFFF;
+    --dock-border: rgba(0, 0, 0, 0.07);
+    --dock-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+    --dock-pill: rgba(52, 130, 255, 0.14);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ========== 2. BASE & MIUIX TOPAPPBAR ========== */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font: 15px/1.45 var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select { font: inherit; color: inherit; touch-action: manipulation; }
+.term { overscroll-behavior: contain; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: var(--haze);
+  border-bottom: 0.5px solid var(--divider);
+  padding: max(10px, env(safe-area-inset-top)) 16px 10px;
+}
+.topbar-in {
+  max-width: 580px; margin: 0 auto;
+  display: flex; align-items: center; gap: 12px;
+}
+.app-icon {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: var(--primary); color: #FFFFFF;
+  display: grid; place-items: center; flex-shrink: 0;
+  box-shadow: 0 4px 12px var(--primary-soft);
+}
+.app-icon svg { width: 22px; height: 22px; }
+.tb-titles { flex: 1; min-width: 0; }
+.tb-name { font-weight: 700; font-size: 18px; letter-spacing: -0.2px; line-height: 1.2; }
+.tb-sub { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--sub); margin-top: 2px; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+.dot.warn { background: var(--yellow); }
+.dot.bad { background: var(--red); }
+
+.miuix-icon-btn {
+  width: 40px; height: 40px;
+  border-radius: 12px; border: 0;
+  background: var(--item-bg); color: var(--text);
+  display: grid; place-items: center;
+  cursor: pointer; transition: transform 0.15s var(--spring), background 0.15s;
+}
+.miuix-icon-btn svg { width: 19px; height: 19px; }
+.miuix-icon-btn:active { transform: scale(0.91); background: var(--card-press); }
+.miuix-icon-btn.spin svg { animation: rot 0.55s linear; }
+@keyframes rot { to { transform: rotate(360deg); } }
+
+.container {
+  max-width: 580px; margin: 0 auto;
+  padding: 12px 14px calc(102px + env(safe-area-inset-bottom));
+}
+
+/* ========== 3. MIUIX CORE COMPONENTS ========== */
+.small-title {
+  font-size: 13px; font-weight: 600;
+  color: var(--sub);
+  padding: 10px 14px 6px; margin: 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.small-title:first-child { padding-top: 2px; }
+.st-act {
+  border: 0; background: transparent;
+  color: var(--primary); font-size: 13px; font-weight: 600;
+  padding: 4px 8px; margin: -4px -8px; border-radius: 8px;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.st-act:active { opacity: 0.6; }
+
+.m-card {
+  background: var(--card);
+  border-radius: var(--r-card);
+  padding: 16px; margin-bottom: 12px;
+  overflow: hidden;
+}
+.m-card.list-card { padding: 4px 0; }
+
+.m-pref {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; padding: 13px 16px; min-height: 58px;
+  transition: background 0.15s, transform 0.15s var(--spring);
+  position: relative;
+}
+.m-pref.clickable { cursor: pointer; }
+.m-pref.clickable:active { background: var(--card-press); transform: scale(0.99); }
+.m-pref + .m-pref::before {
+  content: ""; position: absolute; top: 0; left: 16px; right: 16px;
+  height: 0.5px; background: var(--divider);
+}
+.m-pref-body { flex: 1; min-width: 0; }
+.m-pref-title { font-size: 15.5px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.m-pref-sum { font-size: 13px; color: var(--sub); margin-top: 3px; line-height: 1.4; }
+
+/* Miuix Switch (50x28px) */
+.m-sw {
+  position: relative; width: 50px; height: 28px;
+  flex-shrink: 0; display: inline-block; cursor: pointer;
+}
+.m-sw input {
+  opacity: 0; position: absolute; inset: 0; margin: 0;
+  width: 100%; height: 100%; z-index: 2; cursor: pointer;
+}
+.m-sw i {
+  position: absolute; inset: 0;
+  background: var(--sw-off);
+  border-radius: var(--r-pill);
+  transition: background 0.22s var(--spring);
+}
+.m-sw i::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--sw-thumb);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.22);
+  transition: transform 0.24s var(--spring);
+}
+.m-sw input:checked:active + i::after { transform: translateX(19px); }
+.m-sw input:checked + i { background: var(--primary); }
+.m-sw input:checked + i::after { transform: translateX(22px); background: var(--primary-fg); }
+
+/* Miuix Button */
+.m-btn {
+  min-height: 46px; padding: 0 18px;
+  border-radius: var(--r-btn); border: 0;
+  background: var(--item-bg); color: var(--text);
+  font-size: 15px; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  cursor: pointer; transition: transform 0.15s var(--spring), background 0.15s, opacity 0.15s;
+}
+.m-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+.m-btn.pri { background: var(--primary); color: var(--primary-fg); }
+.m-btn.danger { background: var(--red-soft); color: var(--red); }
+.m-btn.sm { min-height: 36px; padding: 0 13px; font-size: 13px; border-radius: 10px; }
+.m-btn.full { width: 100%; }
+.m-btn:active { transform: scale(0.97); opacity: 0.88; }
+
+/* Miuix TabRow */
+.m-tabrow {
+  display: flex; gap: 4px;
+  background: var(--item-bg);
+  padding: 4px; border-radius: var(--r-inner);
+}
+.m-tabrow button {
+  flex: 1; min-height: 40px; border: 0;
+  border-radius: calc(var(--r-inner) - 3px);
+  background: transparent; color: var(--sub);
+  font-size: 14.5px; font-weight: 600;
+  cursor: pointer; transition: background-color 0.2s, color 0.2s;
+}
+.m-tabrow button.on {
+  background: var(--card); color: var(--text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Connection Error Banner */
+.err-banner {
+  display: none;
+  background: var(--red-soft);
+  border-radius: var(--r-card);
+  padding: 14px 16px; margin-bottom: 12px;
+  align-items: center; gap: 12px;
+}
+.err-banner.show { display: flex; }
+.err-banner svg { width: 22px; height: 22px; color: var(--red); flex-shrink: 0; }
+.err-banner .eb-txt { flex: 1; font-size: 13px; color: var(--text); line-height: 1.4; }
+.err-banner .eb-txt b { display: block; font-size: 14px; color: var(--red); margin-bottom: 2px; }
+
+.tab { display: none; animation: mFade 0.15s ease-out; }
+.tab.on { display: block; }
+@keyframes mFade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ========== 4. TAB 1: HERO, TIMELINE & TERMINAL ========== */
+.hero-card { position: relative; overflow: hidden; }
+.hero-card::after {
+  content: ""; position: absolute; top: -45px; right: -45px;
+  width: 150px; height: 150px; border-radius: 50%;
+  background: radial-gradient(circle, var(--green) 0%, transparent 68%); opacity: 0.16;
+  pointer-events: none;
+}
+.hero-card.warn::after { background: radial-gradient(circle, var(--yellow) 0%, transparent 68%); opacity: 0.2; }
+.hero-card.bad::after { background: radial-gradient(circle, var(--red) 0%, transparent 68%); opacity: 0.24; }
+
+.hero-main { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+.ring-box { position: relative; width: 78px; height: 78px; flex-shrink: 0; }
+.ring-svg { width: 78px; height: 78px; transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: var(--item-bg); stroke-width: 7.5; }
+.ring-fg {
+  fill: none; stroke: var(--green); stroke-width: 7.5;
+  stroke-linecap: round;
+  stroke-dasharray: 201; stroke-dashoffset: 201;
+  transition: stroke-dashoffset 0.5s var(--spring), stroke 0.3s;
+}
+.hero-card.warn .ring-fg { stroke: var(--yellow); }
+.hero-card.bad .ring-fg { stroke: var(--red); }
+.ring-ico {
+  position: absolute; inset: 0;
+  display: grid; place-items: center; color: var(--green);
+}
+.hero-card.warn .ring-ico { color: var(--yellow); }
+.hero-card.bad .ring-ico { color: var(--red); }
+.ring-ico svg { width: 28px; height: 28px; }
+
+.hero-txt { flex: 1; min-width: 0; }
+.hero-pill {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  padding: 2px 9px; border-radius: var(--r-pill);
+  background: var(--green-soft); color: var(--green);
+  margin-bottom: 5px;
+}
+.hero-card.warn .hero-pill { background: var(--yellow-soft); color: var(--yellow); }
+.hero-card.bad .hero-pill { background: var(--red-soft); color: var(--red); }
+.hero-title { font-size: 19px; font-weight: 700; line-height: 1.25; }
+.hero-meta { font-size: 12.5px; color: var(--sub); margin-top: 4px; }
+.hero-meta b { color: var(--text); font-family: var(--font-mono); font-weight: 600; }
+
+.stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat-cell {
+  background: var(--item-bg);
+  border-radius: var(--r-inner);
+  padding: 12px 14px;
+}
+.stat-cell b { display: block; font-size: 22px; font-weight: 700; font-family: var(--font-mono); line-height: 1.15; }
+.stat-cell span { font-size: 12px; color: var(--sub); }
+
+/* Timeline */
+.timeline { position: relative; padding-left: 18px; }
+.timeline::before {
+  content: ""; position: absolute; left: 5px; top: 8px; bottom: 8px;
+  width: 1.5px; background: var(--divider);
+}
+.tl-item { position: relative; padding: 6px 0 14px 8px; font-size: 13.5px; }
+.tl-item:last-child { padding-bottom: 2px; }
+.tl-dot {
+  position: absolute; left: -16.5px; top: 11px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--primary);
+}
+.tl-item.trigger .tl-dot { background: var(--red); box-shadow: 0 0 0 3px var(--red-soft); }
+.tl-item.timeout .tl-dot { background: var(--yellow); box-shadow: 0 0 0 3px var(--yellow-soft); }
+.tl-item.systemui .tl-dot { background: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+
+.tl-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 3px; }
+.m-badge {
+  font-size: 10px; font-weight: 700; padding: 2px 7px;
+  border-radius: 6px; letter-spacing: 0.03em;
+}
+.m-badge.trigger { background: var(--red-soft); color: var(--red); }
+.m-badge.timeout { background: var(--yellow-soft); color: var(--yellow); }
+.m-badge.systemui { background: var(--primary-soft); color: var(--primary); }
+.tl-time { color: var(--sub); font-size: 11.5px; font-family: var(--font-mono); }
+.tl-desc { color: var(--text); line-height: 1.45; word-break: break-word; }
+
+/* Dropdown & Terminal */
+.sel-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.sel-wrap { position: relative; flex: 1; min-width: 0; }
+.sel-wrap select {
+  width: 100%; height: 42px; padding: 0 34px 0 13px;
+  border-radius: var(--r-inner); border: 0;
+  background: var(--item-bg); color: var(--text);
+  font-size: 13.5px; font-weight: 600;
+  appearance: none; -webkit-appearance: none; outline: none;
+}
+.sel-wrap svg {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px; color: var(--sub); pointer-events: none;
+}
+.term-box {
+  background: #0C0D10;
+  border-radius: var(--r-inner);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+.term-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 12px; background: rgba(255, 255, 255, 0.04);
+  font: 11px var(--font-mono); color: #8E8E93;
+}
+.term-dots { display: flex; gap: 5px; }
+.term-dots i { width: 8px; height: 8px; border-radius: 50%; display: block; }
+.term-dots i:nth-child(1) { background: #FF5F56; }
+.term-dots i:nth-child(2) { background: #FFBD2E; }
+.term-dots i:nth-child(3) { background: #27C93F; }
+.term {
+  padding: 11px 12px; max-height: 320px; overflow-y: auto;
+  font: 12px/1.62 var(--font-mono); color: #E5E5EA;
+  white-space: pre-wrap; word-break: break-word;
+}
+.term .l-err { color: #FF6961; font-weight: 600; }
+.term .l-ok { color: #32D74B; }
+.term .l-act { color: #FF9F0A; }
+.term .l-hd { color: #64D2FF; font-weight: 700; }
+.term .l-t { color: #636366; user-select: none; }
+
+/* ========== 5. TAB 2: SEARCHBAR & MODULES ========== */
+.m-search-wrap { position: relative; margin-bottom: 10px; }
+.m-search-wrap svg.s-ico {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  width: 17px; height: 17px; color: var(--sub); pointer-events: none;
+}
+.m-search {
+  width: 100%; height: 44px; padding: 0 38px 0 40px;
+  border-radius: var(--r-pill); border: 0;
+  background: var(--item-bg); color: var(--text);
+  font-size: 14px; outline: none;
+}
+.m-search:focus { box-shadow: 0 0 0 2px var(--primary); }
+.clr-q {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 32px; height: 32px; border: 0; border-radius: 50%;
+  background: transparent; color: var(--sub);
+  display: none; place-items: center; cursor: pointer;
+}
+.clr-q.show { display: grid; }
+.clr-q svg { width: 15px; height: 15px; }
+
+.filter-pills { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; scrollbar-width: none; }
+.filter-pills::-webkit-scrollbar { display: none; }
+.f-pill {
+  height: 34px; padding: 0 13px;
+  border-radius: var(--r-pill); border: 0;
+  background: var(--item-bg); color: var(--sub);
+  font-size: 13px; font-weight: 600; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px;
+  cursor: pointer; transition: background-color 0.18s, color 0.18s;
+}
+.f-pill.on { background: var(--primary); color: var(--primary-fg); }
+.f-pill span { font-size: 11px; opacity: 0.85; font-family: var(--font-mono); }
+
+.mod-row { padding: 13px 16px; position: relative; }
+.mod-row + .mod-row::before {
+  content: ""; position: absolute; top: 0; left: 68px; right: 16px;
+  height: 0.5px; background: var(--divider);
+}
+.mod-row { content-visibility: auto; contain-intrinsic-size: auto 68px; }
+.mod-main { display: flex; align-items: center; gap: 12px; }
+.avatar {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: grid; place-items: center;
+  font-weight: 700; font-size: 16px; color: #FFF;
+  flex-shrink: 0; text-transform: uppercase;
+}
+.mod-info { flex: 1; min-width: 0; }
+.sw-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex: none; }
+.sw-cap { font-size: 10.5px; line-height: 1.1; color: var(--sub); font-weight: 600; white-space: nowrap; }
+.mod-nm-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.mod-nm { font-weight: 600; font-size: 15px; line-height: 1.25; word-break: break-word; }
+.mod-id { color: var(--sub); font-size: 12px; font-family: var(--font-mono); margin-top: 2px; word-break: break-all; }
+.tag { font-size: 10px; font-weight: 700; padding: 1.5px 6px; border-radius: 6px; }
+.tag.on { background: var(--green-soft); color: var(--green); }
+.tag.off { background: var(--red-soft); color: var(--red); }
+.mod-act-row { margin-top: 9px; padding-left: 52px; }
+
+.skel {
+  height: 64px; margin: 6px 12px; border-radius: var(--r-inner);
+  background: var(--item-bg); opacity: 0.6;
+  animation: pulse 1.2s infinite ease-in-out;
+}
+@keyframes pulse { 50% { opacity: 0.3; } }
+
+.how-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 11px 16px; font-size: 13.5px; line-height: 1.45;
+  position: relative;
+}
+.how-item + .how-item::before {
+  content: ""; position: absolute; top: 0; left: 48px; right: 16px;
+  height: 0.5px; background: var(--divider);
+}
+.how-num {
+  width: 22px; height: 22px; border-radius: 7px;
+  background: var(--primary-soft); color: var(--primary);
+  font-weight: 700; font-size: 12px; font-family: var(--font-mono);
+  display: grid; place-items: center; flex-shrink: 0; margin-top: 1px;
+}
+
+.empty {
+  color: var(--sub); text-align: center; padding: 28px 14px;
+  font-size: 13.5px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+
+/* ========== 6. CLEAN FLOATING BLUR DOCK ========== */
+.dock-wrap {
+  position: fixed; left: 0; right: 0;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  z-index: 40;
+  display: flex; justify-content: center;
+  padding: 0 16px;
+  pointer-events: none;
+}
+.floating-dock {
+  pointer-events: auto;
+  position: relative;
+  width: 100%; max-width: 360px;
+  height: 62px;
+  padding: 5px;
+  border-radius: var(--r-pill);
+  background: var(--dock-bg);
+  border: 1px solid var(--dock-border);
+  box-shadow: var(--dock-shadow);
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  align-items: center;
+}
+.dock-pill {
+  position: absolute; top: 5px; bottom: 5px; left: 5px;
+  width: calc((100% - 10px) / 3);
+  border-radius: var(--r-pill);
+  background: var(--dock-pill);
+  transform: translate3d(calc(var(--idx, 0) * 100%), 0, 0);
+  transition: transform 0.28s var(--spring);
+  pointer-events: none; z-index: 0;
+}
+.floating-dock button {
+  position: relative; z-index: 1;
+  height: 100%; border: 0; border-radius: var(--r-pill);
+  background: transparent; color: var(--sub);
+  font-size: 11.5px; font-weight: 600;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  cursor: pointer; user-select: none;
+  transition: color 0.2s, transform 0.15s var(--spring);
+}
+.floating-dock button svg { width: 20px; height: 20px; }
+.floating-dock button:active { transform: scale(0.92); }
+.floating-dock button.on { color: var(--primary); font-weight: 700; }
+
+/* ========== 7. MIUIX WINDOW DIALOG & FULL-TEXT TOAST ========== */
+.dialog-mask {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(0, 0, 0, 0.55);
+  display: none; place-items: center; padding: 22px;
+}
+.dialog-mask.show { display: grid; animation: mFade 0.18s var(--spring); }
+.m-dialog {
+  width: 100%; max-width: 340px;
+  background: var(--card);
+  border-radius: 24px;
+  padding: 22px 20px 18px;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+.m-dialog h3 { margin: 0 0 8px; font-size: 17px; font-weight: 700; }
+.m-dialog p { margin: 0 0 20px; font-size: 14px; color: var(--sub); line-height: 1.45; }
+.m-dialog-btns { display: flex; gap: 10px; }
+.m-dialog-btns .m-btn { flex: 1; min-height: 44px; }
+
+/* Toast: Hiển thị đủ toàn bộ chữ, tự xuống dòng gọn đẹp */
+#toast {
+  position: fixed; left: 50%;
+  bottom: calc(88px + env(safe-area-inset-bottom));
+  transform: translate(-50%, 14px) scale(0.95);
+  background: var(--dock-bg); color: var(--text);
+  border: 1px solid var(--dock-border);
+  padding: 10px 16px; border-radius: 16px;
+  font-size: 13px; line-height: 1.4; font-weight: 600;
+  text-align: center;
+  opacity: 0; pointer-events: none;
+  transition: transform 0.22s var(--spring), opacity 0.2s;
+  width: max-content; max-width: calc(100vw - 32px);
+  white-space: normal; word-break: break-word;
+  box-shadow: var(--dock-shadow); z-index: 50;
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+</style>
+</head>
+<body>
+
+<!-- MIUIX TOPAPPBAR -->
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="app-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+    </div>
+    <div class="tb-titles">
+      <div class="tb-name">Anti Bootloop</div>
+      <div class="tb-sub"><span class="dot" id="dot"></span><span id="hstat">…</span></div>
+    </div>
+    <button class="miuix-icon-btn" id="refresh" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="container">
+  <!-- CONNECTION ERROR BANNER -->
+  <div class="err-banner" id="errBanner">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <div class="eb-txt">
+      <b data-i="connErr"></b>
+      <span id="errMsg"></span>
+    </div>
+    <button class="m-btn sm danger" id="retryBtn" type="button" data-i="retry"></button>
+  </div>
+
+  <!-- TAB 1: NHẬT KÝ (LOGS) -->
+  <section class="tab on" id="tab-logs">
+    <div class="small-title"><span data-i="status"></span></div>
+    <div class="m-card hero-card" id="heroCard">
+      <div class="hero-main">
+        <div class="ring-box">
+          <svg class="ring-svg" viewBox="0 0 74 74">
+            <circle class="ring-bg" cx="37" cy="37" r="32"/>
+            <circle class="ring-fg" id="ringFg" cx="37" cy="37" r="32"/>
+          </svg>
+          <div class="ring-ico" id="heroIcon"></div>
+        </div>
+        <div class="hero-txt">
+          <span class="hero-pill" data-i="status"></span>
+          <div class="hero-title" id="heroTitle">…</div>
+          <div class="hero-meta"><span data-i="lastTrigger"></span>: <b id="sLast">–</b></div>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-cell">
+          <b id="sCount">–</b>
+          <span data-i="failedBoots"></span>
+        </div>
+        <div class="stat-cell">
+          <b id="sThr">–</b>
+          <span data-i="threshold"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="small-title">
+      <span data-i="history"></span>
+      <button class="st-act" id="clrHist" type="button" data-i="clear"></button>
+    </div>
+    <div class="m-card" id="hist"><div class="empty">…</div></div>
+
+    <div class="small-title">
+      <span data-i="bootLog"></span>
+      <button class="st-act" id="copyLog" type="button" data-i="copy"></button>
+    </div>
+    <div class="m-card">
+      <div class="sel-row">
+        <div class="sel-wrap">
+          <select id="logSel"></select>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="term-box">
+        <div class="term-bar">
+          <div class="term-dots"><i></i><i></i><i></i></div>
+          <span id="termFileLbl">boot.log</span>
+        </div>
+        <div class="term" id="term">…</div>
+      </div>
+      <div class="m-pref-sum" style="margin-top:8px" id="tzHint"></div>
+    </div>
+  </section>
+
+  <!-- TAB 2: MODULE (WHITELIST) -->
+  <section class="tab" id="tab-mods">
+    <div class="small-title">
+      <span>Whitelist (<span id="cntKept">0</span>/<span id="cntTotal">0</span>)</span>
+    </div>
+    <div class="m-card" style="padding:14px">
+      <div class="m-pref-sum" style="margin:0 0 12px" data-i="wlHint" data-html="1"></div>
+      <div class="m-search-wrap">
+        <svg class="s-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="m-search" id="q" type="text" autocomplete="off">
+        <button class="clr-q" id="clrQ" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="filter-pills" id="modChips">
+        <button class="f-pill on" data-f="all" type="button"><b data-i="fAll"></b> <span id="cAll">0</span></button>
+        <button class="f-pill" data-f="kept" type="button"><b data-i="fKept"></b> <span id="cKept">0</span></button>
+        <button class="f-pill" data-f="off" type="button"><b data-i="fOff"></b> <span id="cOff">0</span></button>
+      </div>
+      <button class="m-btn pri full" id="restore" type="button" data-i="restoreAll"></button>
+    </div>
+
+    <div class="m-card list-card" id="mods">
+      <div class="skel"></div><div class="skel"></div><div class="skel"></div>
+    </div>
+  </section>
+
+  <!-- TAB 3: CÀI ĐẶT (SETTINGS) -->
+  <section class="tab" id="tab-set">
+    <div class="small-title"><span data-i="thrTitle"></span></div>
+    <div class="m-card">
+      <div class="m-pref-sum" style="margin:0 0 12px" data-i="thrHint"></div>
+      <div class="m-tabrow" id="seg"></div>
+    </div>
+
+    <div class="small-title"><span>Recovery</span></div>
+    <div class="m-card list-card">
+      <label class="m-pref clickable" for="rec">
+        <div class="m-pref-body">
+          <div class="m-pref-title" data-i="recTitle"></div>
+          <div class="m-pref-sum" id="recHint"></div>
+        </div>
+        <span class="m-sw"><input type="checkbox" id="rec"><i></i></span>
+      </label>
+    </div>
+
+    <div class="small-title"><span data-i="langTitle"></span></div>
+    <div class="m-card">
+      <div class="m-tabrow" id="langSeg">
+        <button data-l="vi" type="button">Tiếng Việt</button>
+        <button data-l="en" type="button">English</button>
+      </div>
+      <div class="m-pref-sum" style="margin-top:8px" id="langHint"></div>
+    </div>
+
+    <div class="small-title"><span data-i="tools"></span></div>
+    <div class="m-card">
+      <button class="m-btn full" id="reset" type="button" data-i="resetCount"></button>
+    </div>
+
+    <div class="small-title"><span data-i="howTitle"></span></div>
+    <div class="m-card list-card">
+      <div class="how-item"><span class="how-num">1</span><span data-i="how1"></span></div>
+      <div class="how-item"><span class="how-num">2</span><span data-i="how2"></span></div>
+      <div class="how-item"><span class="how-num">3</span><span data-i="how3"></span></div>
+      <div class="how-item"><span class="how-num">4</span><span data-i="how4"></span></div>
+    </div>
+  </section>
+</main>
+
+<!-- CLEAN FLOATING BLUR NAVIGATION DOCK -->
+<div class="dock-wrap">
+  <nav class="floating-dock" id="dock" style="--idx:0">
+    <div class="dock-pill" aria-hidden="true"></div>
+    <button class="on" data-t="logs" data-idx="0" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span data-i="navLogs"></span>
+    </button>
+    <button data-t="mods" data-idx="1" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+      <span data-i="navMods"></span>
+    </button>
+    <button data-t="set" data-idx="2" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span data-i="navSet"></span>
+    </button>
+  </nav>
+</div>
+
+<!-- MIUIX WINDOW DIALOG -->
+<div class="dialog-mask" id="modal">
+  <div class="m-dialog" role="dialog" aria-modal="true">
+    <h3 id="mTitle"></h3>
+    <p id="mDesc"></p>
+    <div class="m-dialog-btns">
+      <button class="m-btn" id="mCancel" type="button" data-i="cancel"></button>
+      <button class="m-btn pri" id="mOk" type="button" data-i="confirm"></button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function () {
+  var MOD = "/data/adb/modules/anti_bootloop";
+  var TOKEN = location.hash.slice(1);
+  var state = {
+    threshold: 3, recovery: 1, lang: "vi",
+    connErr: false, errRaw: "", errKey: "",
+    mods: [], modsLoaded: false, curLog: "", filter: "", modTab: "all",
+    last: "none", count: 0, rawLog: "", rawHist: ""
+  };
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- 1. I18N (GIỮ NGUYÊN TEXT GỐC) ---------- */
+  var I18N = {
+    vi: {
+      status: "Trạng thái", failedBoots: "Boot lỗi liên tiếp", threshold: "Ngưỡng bootloop", lastTrigger: "Lần kích hoạt cuối",
+      history: "Lịch sử bootloop", clear: "Xoá", bootLog: "Nhật ký boot", never: "Chưa có",
+      wlHint: "Bật công tắc để module <b>không bị tắt</b> khi bootloop. Module không bật sẽ bị tắt.",
+      search: "Tìm module…", restoreAll: "Bật lại module đã bị tắt", noMods: "Không có module nào.", noMatch: "Không khớp.",
+      keepLbl: "Không bị tắt", on: "BẬT", off: "TẮT", enableOne: "Bật lại module này",
+      thrTitle: "Số lần reboot tính là bootloop", thrHint: "Sau chừng này lần boot lỗi liên tiếp, lần boot kế tiếp sẽ tắt module.",
+      recTitle: "Reboot vào recovery khi bootloop", recOn: "Đang BẬT: sau khi tắt module sẽ vào recovery.", recOff: "Đang TẮT: chỉ reboot bình thường.",
+      langTitle: "Ngôn ngữ", langHintVi: "Ngôn ngữ giao diện WebUI.", langHintEn: "WebUI interface language.",
+      tools: "Công cụ", resetCount: "Reset bộ đếm boot lỗi", howTitle: "Cách hoạt động",
+      how1: "Mỗi lần boot, bộ đếm tăng 1; boot xong thì reset về 0.", how2: "Đạt ngưỡng → tắt toàn bộ module (trừ whitelist) rồi reboot.",
+      how3: "Nếu bật recovery, máy sẽ reboot vào recovery.", how4: "Boot treo hoặc SystemUI lỗi cũng được tính là 1 lần boot lỗi.",
+      navLogs: "Nhật ký", navMods: "Module", navSet: "Cài đặt",
+      stable: "Ổn định", warn: "Cảnh báo: {c}/{t} lần boot lỗi", danger: "Sắp kích hoạt bảo vệ", connErr: "Lỗi kết nối", loading: "Đang tải…",
+      tzVi: "Giờ trong nhật ký: theo giờ điện thoại.", tzEn: "Log times: device local time.",
+      noHist: "Chưa ghi nhận bootloop nào 🎉", emptyLog: "(trống)", noLog: "Chưa có log", thisBoot: "(boot này)",
+      tBootloop: "BOOTLOOP", tTimeout: "TREO BOOT", tSystemui: "SYSTEMUI",
+      toThr: "Ngưỡng bootloop: {n} lần", toRecOn: "Sẽ vào recovery khi bootloop", toRecOff: "Không vào recovery", toReset: "Đã reset bộ đếm",
+      toEnabled: "Đã bật lại {n} (cần reboot)", toRestored: "Đã bật lại {n} module (cần reboot)", toWl: "Đã lưu whitelist",
+      toHist: "Đã xoá lịch sử", toRefresh: "Đã làm mới", toLang: "Đã chuyển sang Tiếng Việt", noToken: "Thiếu token. Hãy mở WebUI từ nút Action của module.",
+      copy: "Sao chép", toCopied: "Đã sao chép log", retry: "Thử lại",
+      fAll: "Tất cả", fKept: "Được giữ", fOff: "Bị tắt",
+      cancel: "Huỷ", confirm: "Xác nhận",
+      cfmHistTitle: "Xoá lịch sử?", cfmHistDesc: "Toàn bộ lịch sử bootloop đã ghi nhận sẽ bị xoá.",
+      cfmRestoreTitle: "Bật lại module?", cfmRestoreDesc: "Bật lại tất cả module đã bị tắt do bootloop.",
+      cfmResetTitle: "Reset bộ đếm?", cfmResetDesc: "Đặt bộ đếm số lần boot lỗi liên tiếp về 0."
+    },
+    en: {
+      status: "Status", failedBoots: "Consecutive failed boots", threshold: "Bootloop threshold", lastTrigger: "Last triggered",
+      history: "Bootloop history", clear: "Clear", bootLog: "Boot logs", never: "Never",
+      wlHint: "Turn on the switch so a module is <b>NOT disabled</b> on bootloop. Modules left off will be disabled.",
+      search: "Search modules…", restoreAll: "Re-enable disabled modules", noMods: "No modules found.", noMatch: "No match.",
+      keepLbl: "Keep enabled", on: "ON", off: "OFF", enableOne: "Re-enable this module",
+      thrTitle: "Reboots counted as a bootloop", thrHint: "After this many consecutive failed boots, the next boot will disable modules.",
+      recTitle: "Reboot to recovery on bootloop", recOn: "ON: the device goes to recovery after disabling modules.", recOff: "OFF: just a normal reboot.",
+      langTitle: "Language", langHintVi: "Ngôn ngữ giao diện WebUI.", langHintEn: "WebUI interface language.",
+      tools: "Tools", resetCount: "Reset failed-boot counter", howTitle: "How it works",
+      how1: "Each boot increments a counter; once boot completes it resets to 0.", how2: "At the threshold, all modules (except the whitelist) are disabled and the device reboots.",
+      how3: "If recovery is enabled, the device reboots into recovery.", how4: "A hung boot or a SystemUI failure also counts as a failed boot.",
+      navLogs: "Logs", navMods: "Modules", navSet: "Settings",
+      stable: "Stable", warn: "Warning: {c}/{t} failed boots", danger: "Protection about to trigger", connErr: "Connection error", loading: "Loading…",
+      tzVi: "Giờ trong nhật ký: theo giờ điện thoại.", tzEn: "Log times: device local time.",
+      noHist: "No bootloop recorded 🎉", emptyLog: "(empty)", noLog: "No logs yet", thisBoot: "(this boot)",
+      tBootloop: "BOOTLOOP", tTimeout: "BOOT HANG", tSystemui: "SYSTEMUI",
+      toThr: "Bootloop threshold: {n}", toRecOn: "Will boot to recovery on bootloop", toRecOff: "Recovery disabled", toReset: "Counter reset",
+      toEnabled: "{n} re-enabled (reboot needed)", toRestored: "{n} module(s) re-enabled (reboot needed)", toWl: "Whitelist saved",
+      toHist: "History cleared", toRefresh: "Refreshed", toLang: "Switched to English", noToken: "Missing token. Open the WebUI from the module's Action button.",
+      copy: "Copy", toCopied: "Log copied", retry: "Retry",
+      fAll: "All", fKept: "Kept", fOff: "Disabled",
+      cancel: "Cancel", confirm: "Confirm",
+      cfmHistTitle: "Clear history?", cfmHistDesc: "All recorded bootloop events will be deleted.",
+      cfmRestoreTitle: "Re-enable modules?", cfmRestoreDesc: "Re-enable all modules disabled by bootloop protection.",
+      cfmResetTitle: "Reset counter?", cfmResetDesc: "Reset consecutive failed boot counter to 0."
+    }
+  };
+  function t(k, p) {
+    var s = (I18N[state.lang] && I18N[state.lang][k]) || I18N.vi[k] || k;
+    if (p) for (var x in p) s = s.replace("{" + x + "}", p[x]);
+    return s;
+  }
+
+  /* ---------- 2. TIME & LOG TRANSLATION (KEEP 100%) ---------- */
+  function offsetSec() { return -new Date().getTimezoneOffset() * 60; }
+  function fmtEpoch(ms) { return new Date(ms + offsetSec() * 1000).toISOString().replace("T", " ").slice(0, 19); }
+  function fmtTs(ts) {
+    var m = /^(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)$/.exec(ts);
+    if (!m) return ts;
+    return fmtEpoch(Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +m[6]));
+  }
+  function fmtClock(hh, mm, ss) {
+    var tot = ((+hh * 3600 + +mm * 60 + +ss + offsetSec()) % 86400 + 86400) % 86400;
+    var p = function (n) { return (n < 10 ? "0" : "") + n; };
+    return p(Math.floor(tot / 3600)) + ":" + p(Math.floor(tot % 3600 / 60)) + ":" + p(tot % 60);
+  }
+
+  var TR = [
+    [/BOOT MỚI \(([\d: -]+)\)/, function (m) { return "NEW BOOT (" + fmtTs(m[1]) + ")"; }, true],
+    [/Boot mới \| số lần boot lỗi liên tiếp: (\d+) \/ ngưỡng: (\d+)/, "New boot | consecutive failed boots: $1 / threshold: $2"],
+    [/!!! Phát hiện bootloop -> tắt toàn bộ module/, "!!! Bootloop detected -> disabling all modules"],
+    [/Đã tắt module: (.+)/, "Disabled module: $1"],
+    [/Giữ nguyên \(whitelist\): (.+)/, "Kept (whitelist): $1"],
+    [/Tổng số module đã tắt: (\d+)/, "Total modules disabled: $1"],
+    [/Reboot vào recovery/, "Rebooting to recovery"],
+    [/Reboot bình thường/, "Normal reboot"],
+    [/Boot không hoàn tất sau (\d+)s -> reboot \(count=(\d+)\)/, "Boot did not complete after $1s -> rebooting (count=$2)"],
+    [/Boot hoàn tất sau (\d+)s, đã reset bộ đếm/, "Boot completed after $1s, counter reset"],
+    [/SystemUI lỗi \(mất: (\d+), crash: (\d+)\) -> reboot, khôi phục count=(\d+)/, "SystemUI failure (missing: $1, crashes: $2) -> reboot, restored count=$3"],
+    [/Hệ thống ổn định\./, "System stable."],
+    [/Bật lại module: (.+)/, "Re-enabled module: $1"],
+    [/Khôi phục (\d+) module bị tắt do bootloop/, "Restored $1 module(s) disabled by bootloop"],
+    [/Sau (\d+) lần boot lỗi \(ngưỡng (\d+)\): đã tắt (\d+) module, vào recovery/, "After $1 failed boots (threshold $2): disabled $3 module(s), going to recovery"],
+    [/Sau (\d+) lần boot lỗi \(ngưỡng (\d+)\): đã tắt (\d+) module, reboot thường/, "After $1 failed boots (threshold $2): disabled $3 module(s), normal reboot"],
+    [/Boot treo quá (\d+)s, tự reboot \(boot lỗi: (\d+)\/(\d+)\)/, "Boot hung for over $1s, auto reboot (failed boots: $2/$3)"],
+    [/SystemUI lỗi sau khi boot \(mất: (\d+), crash: (\d+)\), tự reboot \(boot lỗi: (\d+)\/(\d+)\)/, "SystemUI failed after boot (missing: $1, crashes: $2), auto reboot (failed boots: $3/$4)"]
+  ];
+  function trMsg(s) {
+    if (state.lang !== "en") {
+      var hd = /BOOT MỚI \(([\d: -]+)\)/.exec(s);
+      return hd ? s.replace(hd[1], fmtTs(hd[1])) : s;
+    }
+    for (var i = 0; i < TR.length; i++) {
+      var r = TR[i], m = r[0].exec(s);
+      if (!m) continue;
+      if (typeof r[1] === "function") return s.replace(r[0], r[1](m));
+      return s.replace(r[0], r[1]);
+    }
+    return s;
+  }
+
+  /* ---------- 3. HELPERS & API (KEEP 100%) ---------- */
+  function toast(msg) {
+    var el = $("toast"); el.textContent = msg; el.className = "show";
+    clearTimeout(toast._t); toast._t = setTimeout(function () { el.className = ""; }, 2200);
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function confirmBox(titleKey, descKey, isDanger, onYes) {
+    $("mTitle").textContent = t(titleKey);
+    $("mDesc").textContent = t(descKey);
+    $("mOk").className = "m-btn " + (isDanger ? "danger" : "pri");
+    $("modal").className = "dialog-mask show";
+    $("mOk").onclick = function () { $("modal").className = "dialog-mask"; onYes(); };
+  }
+  $("mCancel").onclick = function () { $("modal").className = "dialog-mask"; };
+  $("modal").onclick = function (e) { if (e.target === $("modal")) $("modal").className = "dialog-mask"; };
+
+  function api(cmd) {
+    return new Promise(function (resolve, reject) {
+      if (window.ksu && typeof ksu.exec === "function") {
+        var cb = "abl_cb_" + Date.now() + Math.floor(Math.random() * 1e6);
+        window[cb] = function (code, out, err) {
+          delete window[cb];
+          if (code === 0) resolve(String(out || "").trim());
+          else reject(new Error(err || out || "exec error"));
+        };
+        ksu.exec("sh " + MOD + "/api.sh " + cmd, "{}", cb);
+      } else {
+        if (!TOKEN) {
+          var er = new Error(t("noToken"));
+          er.i18nKey = "noToken";
+          return reject(er);
+        }
+        fetch("cgi-bin/api", { method: "POST", headers: { "X-Token": TOKEN }, body: cmd, cache: "no-store" })
+          .then(function (r) { return r.text(); })
+          .then(function (x) { x = x.trim(); if (x.indexOf("ERR:") === 0) reject(new Error(x)); else resolve(x); })
+          .catch(reject);
+      }
+    });
+  }
+
+  /* ---------- 4. LANGUAGE & RENDER ---------- */
+  function getErrText() {
+    return state.errKey ? t(state.errKey) : state.errRaw;
+  }
+  function applyStatic() {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-i]"), function (el) {
+      var v = t(el.getAttribute("data-i"));
+      if (el.getAttribute("data-html")) el.innerHTML = v; else el.textContent = v;
+    });
+    document.documentElement.lang = state.lang;
+    $("q").placeholder = t("search");
+    $("tzHint").textContent = state.lang === "vi" ? I18N.vi.tzVi : I18N.en.tzEn;
+    $("langHint").textContent = state.lang === "vi" ? I18N.vi.langHintVi : I18N.en.langHintEn;
+    Array.prototype.forEach.call($("langSeg").children, function (b) {
+      b.className = b.getAttribute("data-l") === state.lang ? "on" : "";
+    });
+    if (state.connErr) {
+      $("errMsg").textContent = getErrText();
+    }
+  }
+  function rerender() {
+    applyStatic(); renderSettings(); renderStatus(); renderMods(); renderHist(); renderLogText(); renderLogSel();
+  }
+  Array.prototype.forEach.call($("langSeg").children, function (b) {
+    b.onclick = function () {
+      var l = b.getAttribute("data-l"), prev = state.lang;
+      if (l === prev) return;
+      state.lang = l;
+      try { localStorage.setItem("abl_lang", l); } catch (e) {}
+      rerender();
+      api("set lang " + l).then(function () {
+        toast(t("toLang"));
+      }).catch(function (e) {
+        state.lang = prev;
+        try { localStorage.setItem("abl_lang", prev); } catch (x) {}
+        rerender();
+        toast(e.i18nKey ? t(e.i18nKey) : e.message);
+      });
+    };
+  });
+
+  /* ---------- 5. FLOATING DOCK TABS ---------- */
+  var dock = $("dock");
+  var navBtns = dock.querySelectorAll("button");
+  Array.prototype.forEach.call(navBtns, function (b) {
+    b.onclick = function () {
+      Array.prototype.forEach.call(navBtns, function (x) { x.className = ""; });
+      Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (x) { x.className = "tab"; });
+      b.className = "on";
+      dock.style.setProperty("--idx", b.getAttribute("data-idx") || "0");
+      $("tab-" + b.getAttribute("data-t")).className = "tab on";
+      window.scrollTo(0, 0);
+    };
+  });
+
+  /* ---------- 6. STATUS HERO ---------- */
+  function renderStatus() {
+    var dot = $("dot"), hero = $("heroCard"), title = $("heroTitle"), ico = $("heroIcon");
+
+    if (state.connErr) {
+      $("sCount").textContent = "–";
+      $("sThr").textContent = state.threshold;
+      $("sLast").textContent = "–";
+      $("ringFg").style.strokeDashoffset = "201";
+      dot.className = "dot bad";
+      hero.className = "m-card hero-card bad";
+      $("hstat").textContent = t("connErr");
+      title.textContent = t("connErr");
+      ico.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+      return;
+    }
+
+    $("sCount").textContent = state.count;
+    $("sThr").textContent = state.threshold;
+    $("sLast").textContent = state.last === "none" ? t("never") : fmtTs(state.last);
+
+    var ratio = state.threshold > 0 ? Math.min(1, state.count / state.threshold) : 0;
+    $("ringFg").style.strokeDashoffset = String(201 - ratio * 201);
+
+    if (state.count === 0) {
+      dot.className = "dot"; hero.className = "m-card hero-card";
+      $("hstat").textContent = t("stable"); title.textContent = t("stable");
+      ico.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>';
+    } else if (state.count < state.threshold) {
+      dot.className = "dot warn"; hero.className = "m-card hero-card warn";
+      var w = t("warn", { c: state.count, t: state.threshold });
+      $("hstat").textContent = w; title.textContent = w;
+      ico.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+    } else {
+      dot.className = "dot bad"; hero.className = "m-card hero-card bad";
+      $("hstat").textContent = t("danger"); title.textContent = t("danger");
+      ico.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+    }
+  }
+
+  /* ---------- 7. SETTINGS ---------- */
+  function renderSettings() {
+    var seg = $("seg"); seg.innerHTML = "";
+    for (var i = 1; i <= 5; i++) {
+      (function (n) {
+        var b = document.createElement("button");
+        b.type = "button"; b.textContent = n;
+        if (n === state.threshold) b.className = "on";
+        b.onclick = function () {
+          api("set threshold " + n).then(function () {
+            state.threshold = n; renderSettings(); renderStatus(); toast(t("toThr", { n: n }));
+          }).catch(function (e) { toast(e.i18nKey ? t(e.i18nKey) : e.message); });
+        };
+        seg.appendChild(b);
+      })(i);
+    }
+    $("rec").checked = state.recovery === 1;
+    $("recHint").textContent = state.recovery === 1 ? t("recOn") : t("recOff");
+  }
+  $("rec").onchange = function (e) {
+    var v = e.target.checked ? 1 : 0;
+    api("set recovery " + v).then(function () {
+      state.recovery = v; renderSettings(); toast(v ? t("toRecOn") : t("toRecOff"));
+    }).catch(function (er) { toast(er.i18nKey ? t(er.i18nKey) : er.message); e.target.checked = !v; });
+  };
+  $("reset").onclick = function () {
+    confirmBox("cfmResetTitle", "cfmResetDesc", false, function () {
+      api("reset").then(function () { toast(t("toReset")); loadAll(); }).catch(function (e) { toast(e.i18nKey ? t(e.i18nKey) : e.message); });
+    });
+  };
+
+  /* ---------- 8. MODULES ---------- */
+  var COLORS = ["#3482FF", "#28C840", "#FF9F0A", "#AF52DE", "#FF375F", "#5856D6", "#00C7BE"];
+  function avatarBg(id) {
+    var h = 0; for (var i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+    return COLORS[h % COLORS.length];
+  }
+  function updateCounts() {
+    var tot = state.mods.length;
+    var kept = state.mods.filter(function (m) { return m.wl; }).length;
+    var off = state.mods.filter(function (m) { return !m.en; }).length;
+    $("cntTotal").textContent = tot; $("cntKept").textContent = kept;
+    $("cAll").textContent = tot; $("cKept").textContent = kept; $("cOff").textContent = off;
+  }
+  function renderMods() {
+    updateCounts();
+    var box = $("mods");
+    if (!state.modsLoaded) return;
+    if (state.connErr && !state.mods.length) {
+      box.innerHTML = '<div class="empty"><span>' + esc(getErrText()) + '</span></div>';
+      return;
+    }
+    var list = state.mods.filter(function (m) {
+      if (state.modTab === "kept" && !m.wl) return false;
+      if (state.modTab === "off" && m.en) return false;
+      var q = state.filter;
+      return !q || (m.name + " " + m.id).toLowerCase().indexOf(q) >= 0;
+    });
+    if (!list.length) {
+      box.innerHTML = '<div class="empty"><span>' + esc(state.mods.length ? t("noMatch") : t("noMods")) + '</span></div>';
+      return;
+    }
+    box.innerHTML = "";
+    list.forEach(function (m) {
+      var d = document.createElement("div"); d.className = "mod-row";
+      var ch = (m.name || m.id || "?").trim().charAt(0);
+      d.innerHTML =
+        '<div class="mod-main">' +
+          '<div class="avatar" style="background:' + avatarBg(m.id) + '">' + esc(ch) + '</div>' +
+          '<div class="mod-info">' +
+            '<div class="mod-nm-line"><span class="mod-nm">' + esc(m.name) + '</span>' +
+            '<span class="tag ' + (m.en ? "on" : "off") + '">' + esc(m.en ? t("on") : t("off")) + '</span></div>' +
+            '<div class="mod-id">' + esc(m.id) + ' · ' + esc(m.ver) + '</div>' +
+          '</div>' +
+          '<div class="sw-wrap"><span class="sw-cap">' + esc(t("keepLbl")) + '</span><label class="m-sw" title="' + esc(t("keepLbl")) + '"><input type="checkbox"' + (m.wl ? " checked" : "") + '><i></i></label></div>' +
+        '</div>' +
+        (m.en ? "" : '<div class="mod-act-row"><button class="m-btn sm" type="button">' + esc(t("enableOne")) + '</button></div>');
+
+      d.querySelector("input").onchange = function (ev) {
+        m.wl = ev.target.checked ? 1 : 0; updateCounts(); saveWhitelist();
+      };
+      var eb = d.querySelector(".m-btn");
+      if (eb) eb.onclick = function () {
+        api("enable " + m.id).then(function () { toast(t("toEnabled", { n: m.name })); loadAll(); })
+          .catch(function (e) { toast(e.i18nKey ? t(e.i18nKey) : e.message); });
+      };
+      box.appendChild(d);
+    });
+  }
+  var wlTimer = null;
+  function saveWhitelist() {
+    clearTimeout(wlTimer);
+    wlTimer = setTimeout(doSaveWhitelist, 350);
+  }
+  function doSaveWhitelist() {
+    var ids = state.mods.filter(function (m) { return m.wl; }).map(function (m) { return m.id; });
+    api("setwl " + (ids.length ? ids.join(",") : "-"))
+      .then(function () { toast(t("toWl")); })
+      .catch(function (e) { toast(e.i18nKey ? t(e.i18nKey) : e.message); });
+  }
+  var qTimer = null;
+  $("q").oninput = function (e) {
+    var v = e.target.value.trim().toLowerCase();
+    $("clrQ").className = v ? "clr-q show" : "clr-q";
+    clearTimeout(qTimer);
+    qTimer = setTimeout(function () { state.filter = v; renderMods(); }, 120);
+  };
+  $("clrQ").onclick = function () { $("q").value = ""; state.filter = ""; $("clrQ").className = "clr-q"; renderMods(); };
+  Array.prototype.forEach.call($("modChips").children, function (c) {
+    c.onclick = function () {
+      Array.prototype.forEach.call($("modChips").children, function (x) { x.className = "f-pill"; });
+      c.className = "f-pill on"; state.modTab = c.getAttribute("data-f"); renderMods();
+    };
+  });
+  $("restore").onclick = function () {
+    confirmBox("cfmRestoreTitle", "cfmRestoreDesc", false, function () {
+      api("restore").then(function (n) { toast(t("toRestored", { n: n })); loadAll(); })
+        .catch(function (e) { toast(e.i18nKey ? t(e.i18nKey) : e.message); });
+    });
+  };
+
+  /* ---------- 9. HISTORY & LOGS ---------- */
+  function renderHist() {
+    var box = $("hist");
+    var lines = state.rawHist.split("\n").filter(Boolean).reverse();
+    if (!lines.length) {
+      box.innerHTML = '<div class="empty"><span>' + esc(t("noHist")) + '</span></div>';
+      return;
+    }
+    var names = { trigger: t("tBootloop"), timeout: t("tTimeout"), systemui: t("tSystemui") };
+    var wrap = document.createElement("div"); wrap.className = "timeline";
+    lines.forEach(function (l) {
+      var p = l.split("|"), type = p[1] || "trigger", detail = trMsg(p.slice(2).join("|"));
+      var d = document.createElement("div"); d.className = "tl-item " + esc(type);
+      d.innerHTML =
+        '<span class="tl-dot"></span>' +
+        '<div class="tl-head"><span class="m-badge ' + esc(type) + '">' + esc(names[type] || type) + '</span>' +
+        '<span class="tl-time">' + esc(fmtTs(p[0])) + '</span></div>' +
+        '<div class="tl-desc">' + esc(detail) + '</div>';
+      wrap.appendChild(d);
+    });
+    box.innerHTML = ""; box.appendChild(wrap);
+  }
+  $("clrHist").onclick = function () {
+    confirmBox("cfmHistTitle", "cfmHistDesc", true, function () {
+      api("clearhistory").then(function () { toast(t("toHist")); loadHist(); }).catch(function (e) { toast(e.i18nKey ? t(e.i18nKey) : e.message); });
+    });
+  };
+  function loadHist() { return api("history").then(function (x) { state.rawHist = x; renderHist(); }).catch(function () {}); }
+
+  function renderLogText() {
+    var el = $("term");
+    if (!state.rawLog) { el.textContent = t("emptyLog"); return; }
+    el.innerHTML = state.rawLog.split("\n").map(function (l) {
+      var c = "";
+      if (/=====/.test(l)) c = "l-hd";
+      else if (/!!!|lỗi|treo|không hoàn tất/i.test(l)) c = "l-err";
+      else if (/Đã tắt|reboot|recovery/i.test(l)) c = "l-act";
+      else if (/ổn định|hoàn tất|Giữ nguyên|Bật lại|Khôi phục/i.test(l)) c = "l-ok";
+      var m = /^\[(\d\d):(\d\d):(\d\d)\](.*)$/.exec(l), h;
+      if (m) h = '<span class="l-t">[' + fmtClock(m[1], m[2], m[3]) + ']</span>' + esc(trMsg(m[4]));
+      else h = esc(trMsg(l));
+      return c ? '<span class="' + c + '">' + h + '</span>' : h;
+    }).join("\n");
+    el.scrollTop = el.scrollHeight;
+  }
+  function loadLog(name) {
+    $("termFileLbl").textContent = name || "boot.log";
+    return api("log" + (name ? " " + name : "")).then(function (x) { state.rawLog = x; renderLogText(); })
+      .catch(function (e) { $("term").textContent = e.i18nKey ? t(e.i18nKey) : e.message; });
+  }
+  var logFiles = [];
+  function renderLogSel() {
+    var sel = $("logSel"), prev = sel.value; sel.innerHTML = "";
+    if (!logFiles.length) { sel.innerHTML = '<option value="">' + esc(t("noLog")) + '</option>'; return; }
+    logFiles.forEach(function (p) {
+      var o = document.createElement("option");
+      var when = p[2] ? fmtEpoch(parseInt(p[2], 10) * 1000) : "";
+      o.value = p[0];
+      o.textContent = p[0].replace(".log", "") + (p[0] === state.curLog ? " " + t("thisBoot") : "") + (when ? " · " + when : "");
+      sel.appendChild(o);
+    });
+    sel.value = prev && sel.querySelector('option[value="' + prev + '"]') ? prev : (state.curLog || sel.options[0].value);
+    $("termFileLbl").textContent = sel.value || "boot.log";
+  }
+  function loadLogList() {
+    return api("logs").then(function (x) {
+      logFiles = x.split("\n").filter(Boolean).map(function (l) { return l.split("|"); });
+      renderLogSel();
+      return loadLog($("logSel").value);
+    }).catch(function () {});
+  }
+  $("logSel").onchange = function (e) { loadLog(e.target.value); };
+  $("copyLog").onclick = function () {
+    var txt = $("term").innerText || state.rawLog || "";
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(function () { toast(t("toCopied")); }).catch(function () {});
+    } else {
+      var ta = document.createElement("textarea"); ta.value = txt; document.body.appendChild(ta);
+      ta.select(); try { document.execCommand("copy"); toast(t("toCopied")); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+  };
+
+  /* ---------- 10. LOAD ALL ---------- */
+  function parseSections(x) {
+    var o = {}, cur = null;
+    x.split("\n").forEach(function (l) {
+      if (l.indexOf("@@") === 0) { cur = l.slice(2).trim(); o[cur] = []; }
+      else if (cur) o[cur].push(l);
+    });
+    Object.keys(o).forEach(function (k) { o[k] = o[k].join("\n").trim(); });
+    return o;
+  }
+  function loadAll() {
+    var rb = $("refresh"); rb.className = "miuix-icon-btn spin";
+    setTimeout(function () { rb.className = "miuix-icon-btn"; }, 550);
+
+    // 1 lần gọi root duy nhất cho toàn bộ dữ liệu
+    api("all").then(function (x) {
+      var sec = parseSections(x);
+      state.connErr = false; state.errKey = ""; state.errRaw = "";
+      $("errBanner").className = "err-banner";
+
+      var kv = {}; (sec.get || "").split("\n").forEach(function (l) { var i = l.indexOf("="); if (i > 0) kv[l.slice(0, i)] = l.slice(i + 1); });
+      state.threshold = parseInt(kv.threshold, 10) || 3;
+      state.recovery = kv.recovery === "0" ? 0 : 1;
+      state.lang = kv.lang === "en" ? "en" : "vi";
+      state.curLog = kv.current_log || "";
+      state.count = parseInt(kv.count, 10) || 0;
+      state.last = kv.last_trigger || "none";
+      try { localStorage.setItem("abl_lang", state.lang); } catch (e) {}
+
+      state.modsLoaded = true;
+      state.mods = (sec.modules || "").split("\n").filter(Boolean).map(function (l) {
+        var p = l.split("|");
+        return { id: p[0], name: p[1] || p[0], ver: p[2] || "?", en: p[3] === "1", wl: p[4] === "1" };
+      });
+      state.rawHist = sec.history || "";
+      logFiles = (sec.logs || "").split("\n").filter(Boolean).map(function (l) { return l.split("|"); });
+
+      applyStatic(); renderSettings(); renderStatus(); renderMods(); renderHist(); renderLogSel();
+      var sel = $("logSel").value;
+      if (sel && sel !== state.curLog) { loadLog(sel); }       // đang xem file log cũ hơn: tải riêng file đó
+      else { state.rawLog = sec.log || ""; renderLogText(); }
+    }).catch(function (e) {
+      state.connErr = true;
+      state.errKey = e.i18nKey || "";
+      state.errRaw = e.message || "";
+      $("errMsg").textContent = getErrText();
+      $("errBanner").className = "err-banner show";
+      state.modsLoaded = true;
+      renderStatus();
+      renderMods();
+      toast(getErrText());
+    });
+  }
+
+  $("refresh").onclick = function () { loadAll(); toast(t("toRefresh")); };
+  $("retryBtn").onclick = function () { loadAll(); };
+
+  try {
+    var sl = localStorage.getItem("abl_lang"); if (sl === "en" || sl === "vi") state.lang = sl;
+  } catch (e) {}
+
+  applyStatic();
+  renderSettings();
+  renderStatus();
+  renderHist();
+  renderLogSel();
+  renderLogText();
+  loadAll();
+})();
+</script>
+</body>
+</html>
