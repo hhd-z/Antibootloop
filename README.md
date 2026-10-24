@@ -1,9 +1,6 @@
 <div align="center">
 
-<!-- Animated Header / Typing SVG (Tối ưu kích thước cho cả Mobile & PC) -->
-<a href="https://git.io/typing-svg">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=26&duration=3000&pause=1000&color=FF6B00&center=true&vCenter=true&width=420&lines=%F0%9F%9B%A1%EF%B8%8F+Anti+Bootloop;Auto-Rescue+Rooted+Android;Magisk+%7C+KernelSU+%7C+APatch" alt="Typing SVG" width="100%" />
-</a>
+<h1>🛡️ Anti Bootloop</h1>
 
 <p align="center">
   <b>Tự động tắt toàn bộ module khi máy bị bootloop — có thể reboot thẳng vào recovery.</b><br>
@@ -22,11 +19,11 @@
 
 <!-- Language Switcher Buttons -->
 <p align="center">
-  <a href="#-tiếng-việt">
+  <a href="#tiếng-việt">
     <img src="https://img.shields.io/badge/🇻🇳_Tiếng_Việt-DA251D?style=for-the-badge" alt="Tiếng Việt" />
   </a>
   &nbsp;
-  <a href="#-english">
+  <a href="#english">
     <img src="https://img.shields.io/badge/🇬🇧_English-012169?style=for-the-badge" alt="English" />
   </a>
 </p>
@@ -35,7 +32,7 @@
 
 ---
 
-# 🇻🇳 Tiếng Việt
+# Tiếng Việt
 
 <details>
 <summary><b>📑 Mục lục nhanh (Nhấn để mở)</b></summary>
@@ -45,8 +42,8 @@
 - [📋 Yêu cầu hệ thống](#-yêu-cầu-hệ-thống)
 - [📦 Hướng dẫn cài đặt](#-hướng-dẫn-cài-đặt)
 - [🔍 Cơ chế hoạt động](#-cơ-chế-hoạt-động)
-- [🖥️ Giao diện WebUI](#️-giao-diện-webui)
-- [⚙️ Cấu hình nâng cao](#️-cấu-hình-nâng-cao)
+- [🖥️ Giao diện WebUI](#giao-diện-webui)
+- [⚙️ Cấu hình nâng cao](#cấu-hình-nâng-cao)
 - [🧪 Thử nghiệm Bootloop](#-thử-nghiệm-bootloop)
 - [🆘 Khắc phục sự cố](#-khắc-phục-sự-cố-faq)
 - [📁 Cấu trúc thư mục](#-cấu-trúc-thư-mục)
@@ -118,20 +115,21 @@ Sơ đồ dưới đây mô tả luồng xử lý của **Anti Bootloop** trong 
 flowchart TD
     A([⚡ Bắt đầu Boot]) --> B[Chạy post-fs-data.sh]
     B --> C{Số lần lỗi ≥ Ngưỡng?}
-    
-    C -- CÓ (Bootloop!) --> D[🛡️ Tắt toàn bộ Module<br/>Trừ Whitelist & chính nó]
+
+    C -- "CÓ (Bootloop!)" --> D[🛡️ Tắt toàn bộ Module<br/>Trừ Whitelist & chính nó]
     D --> E{Bật chế độ Recovery?}
-    E -- Có --> F([🔄 Reboot vào Recovery])
-    E -- Không --> G([🔄 Reboot bình thường])
-    
-    C -- KHÔNG --> H[➕ Tăng bộ đếm: count + 1]
+    E -- "Có" --> F([🔄 Reboot vào Recovery])
+    E -- "Không" --> G([🔄 Reboot bình thường])
+
+    C -- "KHÔNG" --> H[➕ Tăng bộ đếm: count + 1]
     H --> I[Chạy service.sh]
-    I --> J{Hệ thống boot xong?<br/>sys.boot_completed}
-    
-    J -- Treo > 180s --> K([💥 Ép Reboot - Tính 1 lỗi])
-    J -- Thành công --> L{Theo dõi 30s đầu:<br/>SystemUI ổn định?}
-    L -- Crash liên tục --> K
-    L -- Ổn định --> M([✅ Reset count = 0<br/>Hoàn tất khởi động])
+    I --> J{Boot xong trong 180s?<br/>sys.boot_completed}
+
+    J -- "Treo > 180s" --> K([💥 Ép Reboot - Tính 1 lỗi])
+    J -- "Thành công" --> L[✅ Reset count = 0]
+    L --> N{Theo dõi 30s đầu:<br/>SystemUI ổn định?}
+    N -- "Crash liên tục" --> O([💥 Khôi phục count & Reboot - Tính 1 lỗi])
+    N -- "Ổn định" --> M([✅ Hoàn tất khởi động])
 
     style A fill:#2b3137,stroke:#fff,color:#fff
     style D fill:#d73a49,stroke:#fff,color:#fff
@@ -141,13 +139,13 @@ flowchart TD
 ```
 
 > [!NOTE]
-> - **Reboot thủ công không bị tính là lỗi:** Vì ngay khi máy vào màn hình chính ổn định, bộ đếm `count` đã được trả về `0`.
+> - **Reboot thủ công không bị tính là lỗi:** Vì ngay khi hệ thống boot xong (`sys.boot_completed`), bộ đếm `count` đã được trả về `0`.
 > - **Giữ nguyên trạng thái cá nhân:** Những module nào bạn đã chủ động tắt từ trước sẽ **không bị đụng tới** và cũng **không tự bật lại** khi bạn nhấn nút khôi phục.
 > - **Ví dụ thực tế:** Với ngưỡng đặt là `3`, sau 3 lần khởi động thất bại liên tiếp, ngay đầu lần khởi động thứ `4`, module sẽ can thiệp tắt các module khác và khởi động lại máy.
 
 ---
 
-## 🖥️ Giao diện WebUI
+## Giao diện WebUI
 
 - 📜 **Tab Nhật ký:** Xem trạng thái bảo vệ hiện tại, lịch sử các lần cứu máy (dạng timeline), đọc log chi tiết của từng lần boot (hỗ trợ lọc file, tô màu cú pháp, sao chép nhanh).
 - 🧩 **Tab Module:** Danh sách toàn bộ module trong máy, thanh tìm kiếm/lọc, công tắc **"Không bị tắt"** (thêm vào Whitelist), nút khôi phục nhanh các module vừa bị vô hiệu hoá.
@@ -155,11 +153,11 @@ flowchart TD
 
 ### 🚀 Cách mở WebUI:
 - **Trên KernelSU / APatch:** Nhấn trực tiếp vào thẻ module trong danh sách.
-- **Trên Magisk:** Bấm nút **Action** trên thẻ module ➔ Trình duyệt sẽ tự động mở địa chỉ nội bộ (`127.0.0.1`) kèm theo mã token ngẫu nhiên. *(Server sẽ tự động đóng sau 10 phút không hoạt động để tiết kiệm pin và bảo mật).*
+- **Trên Magisk:** Bấm nút **Action** trên thẻ module ➔ Trình duyệt sẽ tự động mở địa chỉ nội bộ (`127.0.0.1`) kèm theo mã token ngẫu nhiên. *(Server tự động đóng sau 10 phút kể từ lúc bạn bấm Action, nên cần bấm lại nếu hết phiên).*
 
 ---
 
-## ⚙️ Cấu hình nâng cao
+## Cấu hình nâng cao
 
 Toàn bộ dữ liệu cấu hình và nhật ký được lưu tại `/data/adb/anti_bootloop/` *(sẽ tự động xoá sạch khi bạn gỡ cài đặt module)*.
 
@@ -206,7 +204,7 @@ chmod 755 /data/adb/modules/zz_bootloop_test/post-fs-data.sh
 reboot
 "
 ```
-Máy sẽ tự khởi động lại liên tục đúng số lần ngưỡng của bạn, sau đó Anti Bootloop sẽ tự tắt module giả này và giúp máy vào lại màn hình chính bình thường.
+Máy sẽ tự khởi động lại liên tục đúng số lần ngưỡng của bạn, sau đó Anti Bootloop sẽ tắt module giả này (cùng các module khác trừ whitelist). Nếu bạn bật tùy chọn vào Recovery, máy sẽ vào Recovery trước — chọn reboot hệ thống để vào lại màn hình chính.
 </details>
 
 ---
@@ -228,7 +226,7 @@ Bạn có thể gỡ trực tiếp trong ứng dụng Magisk / KernelSU / APatch
 <details>
 <summary><b>❓ Các module đã bị tắt hết rồi, làm sao bật lại nhanh nhất?</b></summary>
 <br>
-Mở <b>WebUI</b> ➔ chuyển sang tab <b>Module</b> ➔ bấm nút <b>"Bật lại module đã bị tắt"</b> (nhớ bỏ chọn module nào gây lỗi nhé) ➔ Khởi động lại máy.
+Mở <b>WebUI</b> ➔ chuyển sang tab <b>Module</b> ➔ bấm <b>"Bật lại module đã bị tắt"</b> để bật lại tất cả cùng lúc, hoặc bấm <b>"Bật lại module này"</b> ở từng module nếu bạn chỉ muốn bật những module an toàn (tránh bật lại module gây lỗi) ➔ Khởi động lại máy.
 </details>
 
 <details>
@@ -268,7 +266,7 @@ Từ các phiên bản mới, thời gian được ghi nhận theo chuẩn quố
 ## 🔒 Bảo mật & Giấy phép
 
 - **Bảo mật WebUI:** Giao diện web chỉ được phép gọi các hàm cố định đã được định nghĩa sẵn trong `api.sh` (không cho phép chạy lệnh shell tuỳ ý). Ở chế độ Magisk, máy chủ chỉ lắng nghe `127.0.0.1` với port ngẫu nhiên, bắt buộc xác thực Token ngẫu nhiên cho mỗi phiên và tự tắt sau 10 phút.
-- **Ghi công (Credits):** Ý tưởng lấy cảm hứng từ **AshReXcue Bootloop Protector** của **AshBorn (@Ripper_Hybrid)**. Mã nguồn của **Anti Bootloop** được viết lại hoàn toàn độc lập.
+- **Ghi công (Credits):** Ý tưởng lấy cảm hứng từ **AshReXcue Bootloop Protector** của **AshBorn (@Ripper_Hybrid)**. Mã nguồn của **Anti Bootloop** được viết lại, không sao chép mã nguồn của AshReXcue.
 - **Giấy phép (License):** Phát hành theo giấy phép **GNU General Public License v3.0** — xem file [`LICENSE`](LICENSE).
 
 > [!CAUTION]
@@ -278,7 +276,7 @@ Từ các phiên bản mới, thời gian được ghi nhận theo chuẩn quố
 
 ---
 
-# 🇬🇧 English
+# English
 
 <details>
 <summary><b>📑 Table of Contents (Click to expand)</b></summary>
@@ -288,7 +286,7 @@ Từ các phiên bản mới, thời gian được ghi nhận theo chuẩn quố
 - [📋 Requirements](#-requirements)
 - [📦 Installation](#-installation)
 - [🔍 How It Works](#-how-it-works)
-- [🖥️ WebUI & Configuration](#️-webui--configuration)
+- [🖥️ WebUI & Configuration](#webui--configuration)
 - [🧪 Testing Bootloop Protection](#-testing-bootloop-protection)
 - [🆘 Troubleshooting](#-troubleshooting)
 - [🙏 Credits & License](#-credits--license)
@@ -346,27 +344,30 @@ Flash the ZIP archive in your root manager and follow the on-screen **Volume Key
 ```mermaid
 flowchart TD
     A([⚡ Boot Starts]) --> B{Count ≥ Threshold?}
-    B -- YES --> C[🛡️ Disable Modules<br/>Except Whitelist]
+    B -- "YES" --> C[🛡️ Disable Modules<br/>Except Whitelist]
     C --> D([🔄 Reboot / Recovery])
-    B -- NO --> E[➕ Count + 1]
-    E --> F{Boot Completed &<br/>SystemUI Stable?}
-    F -- Timeout >180s<br/>or Crash --> G([💥 Force Reboot])
-    F -- YES --> H([✅ Reset Count = 0])
+    B -- "NO" --> E[➕ Count + 1]
+    E --> F{Boot completed<br/>within 180s?}
+    F -- "No (timeout)" --> G([💥 Force Reboot])
+    F -- "Yes" --> R[✅ Reset Count = 0]
+    R --> S{SystemUI stable<br/>for 30s?}
+    S -- "No (crash)" --> T([💥 Restore count & Reboot])
+    S -- "Yes" --> H([✅ Boot OK])
 
     style C fill:#d73a49,stroke:#fff,color:#fff
     style H fill:#28a745,stroke:#fff,color:#fff
 ```
 
-1. **Counter Increment:** Every boot increments a counter in `post-fs-data.sh`. Once `sys.boot_completed` is reached and SystemUI stays stable for 30s, the counter resets to `0`.
+1. **Counter Increment:** Every boot increments a counter in `post-fs-data.sh`. As soon as `sys.boot_completed` is reached, the counter resets to `0`. If SystemUI then fails within the first 30s, the previous count is restored and the device reboots, so it counts as a failed boot.
 2. **Emergency Trigger:** When the counter hits your threshold, the very next boot disables all active modules (excluding whitelisted ones and Anti Bootloop itself) and reboots.
 3. **Preserves User State:** Modules you manually disabled beforehand are ignored and won't be accidentally re-enabled when using the *Restore* button.
 
 ---
 
-## 🖥️ WebUI & Configuration
+## WebUI & Configuration
 
 - **KernelSU / APatch:** Open the WebUI directly from the module card in your manager app.
-- **Magisk:** Tap the module's **Action** button — it launches a secure, localhost-only (`127.0.0.1`) server with a randomized port and session token that automatically shuts down after **10 minutes**.
+- **Magisk:** Tap the module's **Action** button — it launches a secure, localhost-only (`127.0.0.1`) server with a randomized port and session token that automatically shuts down **10 minutes after it starts**.
 
 **Advanced Config:** All files reside in `/data/adb/anti_bootloop/` (`config.prop`, `state.prop`, `events.log`, `logs/`, `disabled.list`). Advanced users can manually edit `boot_timeout` (default `180`) and `stable_time` (default `30`) inside `config.prop`.
 
@@ -395,7 +396,7 @@ su -c "sed -i 's/^count=.*/count=3/' /data/adb/anti_bootloop/state.prop && reboo
 
 ## 🙏 Credits & License
 
-- **Credits:** Concept inspired by **AshReXcue Bootloop Protector** by **AshBorn (@Ripper_Hybrid)**. All code in this repository was written independently from scratch.
+- **Credits:** Concept inspired by **AshReXcue Bootloop Protector** by **AshBorn (@Ripper_Hybrid)**. This module's code was rewritten and does not copy AshReXcue's source code.
 - **License:** Distributed under the **GNU General Public License v3.0** — see [`LICENSE`](LICENSE) for details. Provided *as-is* without warranty of any kind.
 
 ---
