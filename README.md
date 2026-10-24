@@ -9,7 +9,7 @@
 
 <!-- Badges -->
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-v1.7-FF6B00?style=for-the-badge&logo=android&logoColor=white" alt="Version" />
+  <img src="https://img.shields.io/badge/Version-v1.0-FF6B00?style=for-the-badge&logo=android&logoColor=white" alt="Version" />
   <img src="https://img.shields.io/badge/Magisk-00B0FF?style=for-the-badge&logo=magisk&logoColor=white" alt="Magisk" />
   <img src="https://img.shields.io/badge/KernelSU-3DDC84?style=for-the-badge&logo=linux&logoColor=black" alt="KernelSU" />
   <img src="https://img.shields.io/badge/APatch-8A2BE2?style=for-the-badge&logo=android&logoColor=white" alt="APatch" />
