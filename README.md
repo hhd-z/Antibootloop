@@ -402,9 +402,9 @@ su -c "sed -i 's/^count=.*/count=3/' /data/adb/anti_bootloop/state.prop && reboo
 ---
 
 <div align="center">
-  <b>Nếu thấy module hữu ích, đừng quên để lại một ⭐ trên GitHub nhé!</b><br>
+  <b>Nếu thấy module hữu ích, đừng quên để lại một ⭐ trên GitHub nhé và ủng hộ tác giả nhá!</b><br>
   <i>If you find this module helpful, please consider giving it a ⭐!</i>
 
-![QR Donate](./donate.png)
 
+![QR Donate](./donate.png)
 </div>
